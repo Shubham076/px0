@@ -1,0 +1,28 @@
+/* Vitesse Dark: antfu's Vitesse palette (github.com/antfu/vscode-theme-vitesse).
+   Token reference: docs/internals/styling-and-themes.md in px0. */
+:root[data-theme="vitesse-dark"] {
+  --theme-name: "Vitesse Dark";
+  color-scheme: dark;
+
+  /* surfaces, from the editor out to raised hover states */
+  --bg: #121212; --bg2: #181818; --bg3: #1e1e1e; --bg4: #292929;
+  /* text: primary, secondary, tertiary */
+  --fg: #dbd7ca; --dim: #bfbaaa; --faint: #6f6d67;
+  /* borders and accent */
+  --line: #252525; --accent: #4d9375; --accent-fg: #4d9375; --on-accent: #121212;
+  /* selection, search matches, current line */
+  --sel: rgba(238, 238, 238, 0.1); --mark: rgba(230, 204, 119, 0.18); --mark-active: #e6cc77; --cur: #181818;
+  --on-mark-active: #121212;
+  /* elevation */
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+
+  /* syntax */
+  --k: #4d9375; --kt: #5da994; --nf: #80a665; --nc: #5da994; --nb: #cb7676;
+  --nv: #bd976a; --no: #c99076; --na: #bd976a; --nt: #4d9375; --nd: #bd8f8f;
+  --np: #b8a965; --s: #c98a7d; --m: #4c9a91; --o: #cb7676; --p: #666666;
+  --c: #758575; --cp: #4d9375; --err: #cb7676;
+
+  /* diffs and status */
+  --gi: #4d9375; --gd: #cb7676;
+  --gi-bg: rgba(77, 147, 117, 0.14); --gd-bg: rgba(203, 118, 118, 0.14);
+}

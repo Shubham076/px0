@@ -22,23 +22,65 @@ import { handleVimKeyDown, isVimEnabled, getVimMode, showVimHelp, closeVimHelp }
 import { handleImageKey } from './imageview.js';
 import { submitBatch } from './agent.js';
 import { reindexWorkspace } from './panels.js';
+import { loadKeybindings, boundAction, userCombos } from './keybindings.js';
+
+const toggleSidebar = () => { document.body.classList.toggle('side-hidden'); layout(); render(); };
+const toggleInspector = () => {
+  if (document.body.classList.contains('right-hidden')) showRightInspector('refs');
+  else hideRightInspector();
+};
+const nextTab = step => { if (S.tabs.length > 1) switchTab((S.active + step + S.tabs.length) % S.tabs.length); };
+
+/* Actions that ~/.px0/keybindings.json can bind (see keybindings.js). */
+export const ACTIONS = {
+  'settings.open': () => openSettings('ui'),
+  'palette.quickOpen': () => openPalette('file'),
+  'palette.file': () => openPalette('file'),
+  'palette.command': () => openPalette('command'),
+  'palette.line': () => openPalette('line'),
+  'symbol.goto': () => showRightInspector('symbols'),
+  'search.files': () => { showRightInspector('search'); $('#q')?.select(); },
+  'workspace.refresh': () => reindexWorkspace(),
+  'find.open': () => openFind(S.lastWord),
+  'diff.toggle': () => { if (S.meta?.git) toggleDiff(); },
+  'wrap.toggle': () => toggleWordWrap(),
+  'markdown.togglePreview': () => togglePreview(),
+  'lsp.definition': () => gotoDefinition(),
+  'lsp.references': () => findReferences(),
+  'lsp.callTrail': () => showCalls(),
+  'inspector.toggle': toggleInspector,
+  'sidebar.toggle': toggleSidebar,
+  'history.back': () => go(-1),
+  'history.forward': () => go(1),
+  'tab.close': () => { if (S.active >= 0) closeTab(S.active); },
+  'tab.reopen': () => reopenClosedTab(),
+  'tab.next': () => nextTab(1),
+  'tab.previous': () => nextTab(-1),
+  'theme.cycle': () => cycleTheme(),
+  'help.shortcuts': () => showHelp(),
+};
 
 /* Each entry lists alternative combos, written as for keyLabel in state.js so
-   they show as ⌘/⌥/⇧ on a Mac and Ctrl/Alt/Shift elsewhere. Browsers keep
-   Ctrl+W and Cmd+W for themselves, so Alt+W is the close shortcut shown. */
+   they show as ⌘/⌥/⇧ on a Mac and Ctrl/Alt/Shift elsewhere, then the actions
+   whose user keybindings join them. Browsers keep Ctrl+W and Cmd+W for
+   themselves, so Alt+W is the close shortcut shown. */
 export const SHORTCUTS = [
-  [['Mod+,'], 'Open settings'],
-  [['Mod+K'], 'Quick search / palette'], [['Mod+P'], 'Go to file'],
-  [['Mod+Shift+P'], 'Command palette'], [['Mod+Shift+O'], 'Go to symbol'],
-  [['Mod+Shift+F'], 'Search in files'], [['Mod+Shift+R'], 'Refresh workspace'], [['Mod+F'], 'Find in file'],
-  [['Mod+G'], 'Go to line'], [['Mod+D'], 'Toggle diff view (git)'], [['Alt+Z'], 'Toggle word wrap'],
-  [['Alt+M'], 'Toggle Markdown preview'],
+  [['Mod+,'], 'Open settings', ['settings.open']],
+  [['Mod+K'], 'Quick search / palette', ['palette.quickOpen']], [['Mod+P'], 'Go to file', ['palette.file']],
+  [['Mod+Shift+P'], 'Command palette', ['palette.command']], [['Mod+Shift+O'], 'Go to symbol', ['symbol.goto']],
+  [['Mod+Shift+F'], 'Search in files', ['search.files']], [['Mod+Shift+R'], 'Refresh workspace', ['workspace.refresh']],
+  [['Mod+F'], 'Find in file', ['find.open']],
+  [['Mod+G'], 'Go to line', ['palette.line']], [['Mod+D'], 'Toggle diff view (git)', ['diff.toggle']],
+  [['Alt+Z'], 'Toggle word wrap', ['wrap.toggle']],
+  [['Alt+M'], 'Toggle Markdown preview', ['markdown.togglePreview']],
   [['Enter', 'Shift+Enter'], 'Next / previous match'],
-  [['F12', 'Mod+Click'], 'Go to definition'], [['Shift+F12'], 'Find all references'],
-  [['Alt+Shift+H'], 'Call trail (callers / callees)'],
-  [['Mod+J'], 'Toggle right inspector (Symbols/Refs)'],
-  [['Alt+Left', 'Alt+Right'], 'Navigate back / forward'], [['Mod+B'], 'Toggle sidebar'],
-  [['Alt+W'], 'Close tab'], [['Alt+Shift+T'], 'Reopen closed tab'], [['Ctrl+Tab'], 'Next tab'],
+  [['F12', 'Mod+Click'], 'Go to definition', ['lsp.definition']], [['Shift+F12'], 'Find all references', ['lsp.references']],
+  [['Alt+Shift+H'], 'Call trail (callers / callees)', ['lsp.callTrail']],
+  [['Mod+J'], 'Toggle right inspector (Symbols/Refs)', ['inspector.toggle']],
+  [['Alt+Left', 'Alt+Right'], 'Navigate back / forward', ['history.back', 'history.forward']],
+  [['Mod+B'], 'Toggle sidebar', ['sidebar.toggle']],
+  [['Alt+W'], 'Close tab', ['tab.close']], [['Alt+Shift+T'], 'Reopen closed tab', ['tab.reopen']],
+  [['Ctrl+Tab'], 'Next tab', ['tab.next', 'tab.previous']],
   [['Alt+1…9'], 'Select tab'], [['Double click'], 'Highlight all occurrences'],
   [['Mod+A'], 'Select whole file'],
   [['Alt+C', 'Alt+A'], 'Copy selection ref / with context'], [['Alt+U'], 'Find usages of selection'],
@@ -56,8 +98,8 @@ export function showHelp() {
   const ver = S.meta?.version ? ` <span class="help-version">v${esc(S.meta.version)}</span>` : '';
   h.innerHTML = '<div class="help-card"><div class="help-header"><h2>Keyboard Shortcuts</h2>' + ver +
     '<button id="btn-switch-to-vim-help" class="settings-btn-link" style="margin-left:auto;font-size:12px;cursor:pointer;" title="View Vim Keybindings">View Vim Keybindings</button></div><dl class="help-grid">' +
-    SHORTCUTS.map(([combos, v]) => {
-      const comboList = Array.isArray(combos) ? combos : [combos];
+    SHORTCUTS.map(([combos, v, actions = []]) => {
+      const comboList = [...(Array.isArray(combos) ? combos : [combos]), ...actions.flatMap(userCombos)];
       return '<dt>' + comboList.map(keyCaps).filter(Boolean).join('<span class="key-or">/</span>') + '</dt>' +
         '<dd>' + esc(v) + '</dd>';
     }).join('') + '</dl></div>';
@@ -96,6 +138,8 @@ export function initShortcuts() {
     else if (act === 'help') showHelp();
   });
 
+  loadKeybindings();
+
   addEventListener('keydown', e => {
     const mod = e[MOD];
 
@@ -113,6 +157,16 @@ export function initShortcuts() {
       if (!document.body.classList.contains('right-hidden')) { hideRightInspector(); return; }
       if (S.occ) { S.occ = null; paint(); return; }
       if (inField(document.activeElement)) /** @type {HTMLElement} */ (document.activeElement).blur();
+      return;
+    }
+
+    // User keybindings win over the built-in ones. In a text field only combos
+    // with Mod or Alt apply, so typing and the field's own keys still work.
+    const bound = boundAction(e);
+    if (bound && ACTIONS[bound] && (!inField(document.activeElement) || mod || e.altKey)) {
+      e.preventDefault();
+      e.stopPropagation();
+      ACTIONS[bound]();
       return;
     }
 

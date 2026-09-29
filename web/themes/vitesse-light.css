@@ -1,0 +1,28 @@
+/* Vitesse Light: antfu's Vitesse palette (github.com/antfu/vscode-theme-vitesse).
+   Token reference: docs/internals/styling-and-themes.md in px0. */
+:root[data-theme="vitesse-light"] {
+  --theme-name: "Vitesse Light";
+  color-scheme: light;
+
+  /* surfaces, from the editor out to raised hover states */
+  --bg: #ffffff; --bg2: #f7f7f7; --bg3: #f0f0f0; --bg4: #e7e7e7;
+  /* text: primary, secondary, tertiary */
+  --fg: #393a34; --dim: #6a6b64; --faint: #a4a49f;
+  /* borders and accent */
+  --line: #e5e5e5; --accent: #1c6b48; --accent-fg: #1c6b48; --on-accent: #ffffff;
+  /* selection, search matches, current line */
+  --sel: rgba(34, 34, 34, 0.09); --mark: rgba(230, 204, 119, 0.35); --mark-active: #e6cc77; --cur: #f7f7f7;
+  --on-mark-active: #393a34;
+  /* elevation */
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+
+  /* syntax */
+  --k: #1e754f; --kt: #2e8f82; --nf: #59873a; --nc: #2e8f82; --nb: #ab5959;
+  --nv: #b07d48; --no: #a65e2b; --na: #b07d48; --nt: #1e754f; --nd: #bd8f8f;
+  --np: #998418; --s: #b56959; --m: #2f798a; --o: #ab5959; --p: #999999;
+  --c: #a0ada0; --cp: #1e754f; --err: #ab5959;
+
+  /* diffs and status */
+  --gi: #1e754f; --gd: #ab5959;
+  --gi-bg: rgba(30, 117, 79, 0.12); --gd-bg: rgba(171, 89, 89, 0.12);
+}

@@ -611,7 +611,8 @@ function renderSettingsList() {
           </div>
         </div>`;
     } else if (type === 'select') {
-      const opts = item.options || item.Options || [];
+      // Themes are discovered from the loaded stylesheets, user themes included.
+      const opts = key === 'workbench.colorTheme' ? listThemes().map(t => t.id) : (item.options || item.Options || []);
       const optHtml = opts.map(o => {
         const sel = String(o) === String(val) ? 'selected' : '';
         return `<option value="${esc(o)}" ${sel}>${esc(o)}</option>`;

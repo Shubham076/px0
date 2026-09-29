@@ -173,6 +173,7 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc(s.routePath("/api/threads/delete"), s.handleThreadDelete)
 	s.mux.HandleFunc(s.routePath("/api/threads/stream"), s.handleThreadStream)
 	s.mux.HandleFunc(s.routePath("/api/settings"), s.handleSettings)
+	s.mux.HandleFunc(s.routePath("/api/keybindings"), s.handleKeybindings)
 	s.mux.HandleFunc(s.routePath("/api/pr/meta"), s.handlePRMeta)
 	s.mux.HandleFunc(s.routePath("/api/pr/comments"), s.handlePRComments)
 	s.mux.HandleFunc(s.routePath("/api/pr/comments/delete"), s.handlePRCommentDelete)
